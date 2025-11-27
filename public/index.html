@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Database Flow Visualizer</title>
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10.6.1/dist/mermaid.min.js"></script>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Database Flow Visualizer</h1>
+            <p>Select a starting database table to visualize the flow hierarchy</p>
+        </header>
+
+        <main>
+            <section class="controls">
+                <div class="table-selection">
+                    <label for="tableSelect">Select Starting Table:</label>
+                    <select id="tableSelect">
+                        <option value="">-- Choose a table --</option>
+                    </select>
+                    <button id="loadHierarchy" disabled>Load Flow Hierarchy</button>
+                </div>
+
+                <div class="view-controls">
+                    <label>View Mode:</label>
+                    <div class="toggle-buttons">
+                        <button id="treeViewBtn" class="active">Tree View</button>
+                        <button id="stepViewBtn">Step-by-Step</button>
+                        <button id="mermaidViewBtn">Mermaid Chart</button>
+                    </div>
+                </div>
+            </section>
+
+            <section class="loading" id="loadingSection" style="display: none;">
+                <div class="spinner"></div>
+                <p>Loading flow hierarchy...</p>
+            </section>
+
+            <section class="error" id="errorSection" style="display: none;">
+                <div class="error-message">
+                    <h3>Error</h3>
+                    <p id="errorMessage"></p>
+                    <button id="retryButton">Try Again</button>
+                </div>
+            </section>
+
+            <section class="visualization" id="visualizationSection" style="display: none;">
+                <div class="visualization-header">
+                    <h2>Flow Hierarchy for: <span id="currentTable"></span></h2>
+                    <div class="hierarchy-info">
+                        <span>Levels: <span id="levelCount">0</span></span>
+                        <span>Flows: <span id="flowCount">0</span></span>
+                    </div>
+                </div>
+
+                <div class="visualization-content">
+                    <div id="treeView" class="view active">
+                        <!-- Tree view will be rendered here -->
+                    </div>
+                    <div id="stepView" class="view">
+                        <div class="step-controls">
+                            <button id="prevStep" disabled>Previous</button>
+                            <span>Level: <span id="currentLevel">0</span> of <span id="totalLevels">0</span></span>
+                            <button id="nextStep" disabled>Next</button>
+                        </div>
+                        <div id="stepContent">
+                            <!-- Step-by-step content will be rendered here -->
+                        </div>
+                    </div>
+                    <div id="mermaidView" class="view">
+                        <div class="mermaid-controls">
+                            <button id="copyMermaidBtn">Copy Mermaid Code</button>
+                            <button id="downloadMermaidBtn">Download as SVG</button>
+                        </div>
+                        <div id="mermaidContent" class="mermaid-container">
+                            <!-- Mermaid.js flowchart will be rendered here -->
+                        </div>
+                        <div id="mermaidCode" class="mermaid-code" style="display: none;">
+                            <h4>Mermaid.js Code:</h4>
+                            <pre><code id="mermaidCodeContent"></code></pre>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="empty-state" id="emptySection">
+                <div class="empty-message">
+                    <h3>No Flow Hierarchy Loaded</h3>
+                    <p>Select a starting table and click "Load Flow Hierarchy" to begin visualization.</p>
+                </div>
+            </section>
+        </main>
+
+        <footer>
+            <p>Database Flow Visualizer &copy; 2025</p>
+        </footer>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>

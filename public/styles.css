@@ -1,0 +1,581 @@
+/* Reset and base styles */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    line-height: 1.6;
+    color: #333;
+    background-color: #f5f5f5;
+}
+
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Header styles */
+header {
+    text-align: center;
+    margin-bottom: 30px;
+    padding: 20px;
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+header h1 {
+    color: #2c3e50;
+    margin-bottom: 10px;
+    font-size: 2.5rem;
+}
+
+header p {
+    color: #7f8c8d;
+    font-size: 1.1rem;
+}
+
+/* Main content */
+main {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+/* Controls section */
+.controls {
+    background: white;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 20px;
+}
+
+.table-selection {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex: 1;
+}
+
+.table-selection label {
+    font-weight: 600;
+    color: #2c3e50;
+}
+
+.table-selection select {
+    padding: 8px 12px;
+    border: 2px solid #bdc3c7;
+    border-radius: 4px;
+    font-size: 14px;
+    min-width: 150px;
+}
+
+.table-selection button {
+    padding: 8px 16px;
+    background: #3498db;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: background-color 0.2s;
+}
+
+.table-selection button:hover:not(:disabled) {
+    background: #2980b9;
+}
+
+.table-selection button:disabled {
+    background: #bdc3c7;
+    cursor: not-allowed;
+}
+
+.view-controls {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.view-controls label {
+    font-weight: 600;
+    color: #2c3e50;
+}
+
+.toggle-buttons {
+    display: flex;
+    border: 2px solid #3498db;
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.toggle-buttons button {
+    padding: 8px 16px;
+    border: none;
+    background: white;
+    color: #3498db;
+    cursor: pointer;
+    font-weight: 600;
+    transition: all 0.2s;
+}
+
+.toggle-buttons button.active {
+    background: #3498db;
+    color: white;
+}
+
+.toggle-buttons button:hover:not(.active) {
+    background: #ecf0f1;
+}
+
+/* Loading section */
+.loading {
+    text-align: center;
+    padding: 40px;
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.spinner {
+    border: 4px solid #f3f3f3;
+    border-top: 4px solid #3498db;
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    animation: spin 1s linear infinite;
+    margin: 0 auto 20px;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Error section */
+.error {
+    text-align: center;
+    padding: 40px;
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    border-left: 4px solid #e74c3c;
+}
+
+.error-message h3 {
+    color: #e74c3c;
+    margin-bottom: 10px;
+}
+
+.error-message p {
+    color: #7f8c8d;
+    margin-bottom: 20px;
+}
+
+#retryButton {
+    padding: 8px 16px;
+    background: #e74c3c;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: 600;
+}
+
+#retryButton:hover {
+    background: #c0392b;
+}
+
+/* Visualization section */
+.visualization {
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    overflow: hidden;
+}
+
+.visualization-header {
+    padding: 20px;
+    background: #34495e;
+    color: white;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.visualization-header h2 {
+    font-size: 1.5rem;
+}
+
+.hierarchy-info {
+    display: flex;
+    gap: 20px;
+    font-size: 0.9rem;
+    opacity: 0.9;
+}
+
+.visualization-content {
+    padding: 20px;
+}
+
+.view {
+    display: none;
+}
+
+.view.active {
+    display: block;
+}
+
+/* Tree view styles */
+#treeView {
+    min-height: 400px;
+}
+
+.flow-tree {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.tree-level {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.level-header {
+    font-weight: 600;
+    color: #2c3e50;
+    padding: 8px 12px;
+    background: #ecf0f1;
+    border-radius: 4px;
+    margin-bottom: 5px;
+}
+
+.flow-nodes {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.flow-node {
+    background: white;
+    border: 2px solid #3498db;
+    border-radius: 6px;
+    padding: 15px;
+    min-width: 200px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.flow-node:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+}
+
+.flow-name {
+    font-weight: 600;
+    color: #2c3e50;
+    margin-bottom: 8px;
+    font-size: 1.1rem;
+}
+
+.flow-trigger {
+    display: inline-block;
+    padding: 2px 8px;
+    background: #e74c3c;
+    color: white;
+    border-radius: 12px;
+    font-size: 0.8rem;
+    margin-bottom: 8px;
+}
+
+.flow-trigger.database {
+    background: #27ae60;
+}
+
+.flow-input, .flow-output {
+    margin-top: 8px;
+    padding-top: 8px;
+    border-top: 1px solid #ecf0f1;
+}
+
+.flow-input h4, .flow-output h4 {
+    font-size: 0.9rem;
+    color: #7f8c8d;
+    margin-bottom: 4px;
+}
+
+.database-action {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 4px;
+}
+
+.action-badge {
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 0.8rem;
+    font-weight: 600;
+}
+
+.action-badge.create {
+    background: #27ae60;
+    color: white;
+}
+
+.action-badge.update {
+    background: #f39c12;
+    color: white;
+}
+
+.action-badge.delete {
+    background: #e74c3c;
+    color: white;
+}
+
+.fields-list {
+    font-size: 0.8rem;
+    color: #7f8c8d;
+    margin-top: 4px;
+}
+
+/* Step view styles */
+#stepView {
+    min-height: 400px;
+}
+
+.step-controls {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px;
+    background: #ecf0f1;
+    border-radius: 6px;
+    margin-bottom: 20px;
+}
+
+.step-controls button {
+    padding: 8px 16px;
+    background: #3498db;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: 600;
+}
+
+.step-controls button:hover:not(:disabled) {
+    background: #2980b9;
+}
+
+.step-controls button:disabled {
+    background: #bdc3c7;
+    cursor: not-allowed;
+}
+
+.step-level {
+    background: white;
+    border: 2px solid #3498db;
+    border-radius: 6px;
+    padding: 20px;
+    margin-bottom: 15px;
+}
+
+.step-level-header {
+    font-weight: 600;
+    color: #2c3e50;
+    margin-bottom: 15px;
+    font-size: 1.2rem;
+}
+
+/* Empty state */
+.empty-state {
+    text-align: center;
+    padding: 60px 20px;
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.empty-message h3 {
+    color: #7f8c8d;
+    margin-bottom: 10px;
+}
+
+.empty-message p {
+    color: #95a5a6;
+}
+
+/* Footer */
+footer {
+    text-align: center;
+    padding: 20px;
+    color: #7f8c8d;
+    margin-top: 30px;
+    border-top: 1px solid #ecf0f1;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+    .container {
+        padding: 10px;
+    }
+    
+    .controls {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    .table-selection {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    .visualization-header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    
+    .hierarchy-info {
+        align-self: stretch;
+        justify-content: space-between;
+    }
+    
+    .flow-nodes {
+        flex-direction: column;
+    }
+    
+    .step-controls {
+        flex-direction: column;
+        gap: 10px;
+    }
+}
+
+/* Mermaid.js view styles */
+#mermaidView {
+    min-height: 400px;
+}
+
+.mermaid-controls {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+    padding: 15px;
+    background: #ecf0f1;
+    border-radius: 6px;
+}
+
+.mermaid-controls button {
+    padding: 8px 16px;
+    background: #3498db;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: background-color 0.2s;
+}
+
+.mermaid-controls button:hover {
+    background: #2980b9;
+}
+
+.mermaid-container {
+    background: white;
+    border: 2px solid #3498db;
+    border-radius: 6px;
+    padding: 20px;
+    margin-bottom: 20px;
+    overflow: auto;
+    min-height: 300px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.mermaid-container .mermaid {
+    width: 100%;
+    text-align: center;
+}
+
+.mermaid-code {
+    background: #2c3e50;
+    border-radius: 6px;
+    padding: 20px;
+    margin-top: 20px;
+}
+
+.mermaid-code h4 {
+    color: white;
+    margin-bottom: 10px;
+}
+
+.mermaid-code pre {
+    background: #34495e;
+    border-radius: 4px;
+    padding: 15px;
+    overflow-x: auto;
+    margin: 0;
+}
+
+.mermaid-code code {
+    color: #ecf0f1;
+    font-family: 'Courier New', monospace;
+    font-size: 0.9rem;
+    line-height: 1.4;
+}
+
+.loading-message {
+    text-align: center;
+    color: #7f8c8d;
+    font-style: italic;
+}
+
+/* Mermaid chart specific styling */
+.mermaid .node rect,
+.mermaid .node circle,
+.mermaid .node ellipse,
+.mermaid .node polygon {
+    stroke-width: 2px;
+}
+
+.mermaid .node.database rect {
+    fill: #e1f5fe !important;
+    stroke: #01579b !important;
+}
+
+.mermaid .node.flow rect {
+    fill: #f3e5f5 !important;
+    stroke: #4a148c !important;
+}
+
+.mermaid .node.manual rect {
+    fill: #e8f5e8 !important;
+    stroke: #1b5e20 !important;
+}
+
+.mermaid .edgePath path {
+    stroke: #3498db !important;
+    stroke-width: 2px !important;
+}
+
+.mermaid .edgePath marker path {
+    fill: #3498db !important;
+    stroke: #3498db !important;
+}

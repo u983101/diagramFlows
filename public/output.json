@@ -1,0 +1,66 @@
+{
+    "databases": [
+        {
+            "name": "case"
+        },
+        {
+            "name": "task"
+        },
+        {
+            "name": "integration_core"
+        }
+    ],
+    "flows": [
+        {
+            "name": "createCaseNTask",
+            "trigger": "manual",
+            "outputDatabases": [
+                {
+                    "name": "integration_core",
+                    "action": "create",
+                    "fields": [
+                        "source","destination","status", "message"
+                    ]
+                }
+            ]
+        },
+        {
+            "name": "integrationLP-WFT",
+            "trigger": "database",
+            "inputDatabase": {
+                "name": "integration_core",
+                "trigger": 5,
+                "fields": [
+                    "source","destination"
+                ]
+            },
+            "outputDatabases": [
+                {
+                    "name": "case",
+                    "action": "create"
+                },
+                {
+                    "name": "task",
+                    "action": "create"
+                }
+            ]
+        },
+        {
+            "name": "Update Task Status",
+            "trigger": "database",
+            "inputDatabase": {
+                "name": "task",
+                "trigger": 5,
+                "fields": [
+                    "status"
+                ]
+            },
+            "outputDatabases": [
+                {
+                    "name": "integration_core",
+                    "action": "create"
+                }
+            ]
+        }
+    ]
+}
