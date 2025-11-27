@@ -18,9 +18,12 @@
             <section class="controls">
                 <div class="table-selection">
                     <label for="tableSelect">Select Starting Table:</label>
-                    <select id="tableSelect">
-                        <option value="">-- Choose a table --</option>
-                    </select>
+                    <div class="searchable-select">
+                        <input type="text" id="tableSearch" placeholder="Search tables..." autocomplete="off">
+                        <select id="tableSelect" size="5" style="display: none;">
+                            <option value="">-- Choose a table --</option>
+                        </select>
+                    </div>
                     <button id="loadHierarchy" disabled>Load Flow Hierarchy</button>
                 </div>
 

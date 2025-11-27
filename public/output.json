@@ -8,6 +8,27 @@
         },
         {
             "name": "integration_core"
+        },
+        {
+            "name": "customer"
+        },
+        {
+            "name": "order"
+        },
+        {
+            "name": "inventory"
+        },
+        {
+            "name": "payment"
+        },
+        {
+            "name": "shipment"
+        },
+        {
+            "name": "notification"
+        },
+        {
+            "name": "audit_log"
         }
     ],
     "flows": [
@@ -58,7 +79,318 @@
             "outputDatabases": [
                 {
                     "name": "integration_core",
-                    "action": "create"
+                    "action": "update"
+                }
+            ]
+        },
+        {
+            "name": "Customer Registration",
+            "trigger": "manual",
+            "outputDatabases": [
+                {
+                    "name": "customer",
+                    "action": "create",
+                    "fields": [
+                        "name","email","phone","address"
+                    ]
+                },
+                {
+                    "name": "audit_log",
+                    "action": "create",
+                    "fields": [
+                        "action","timestamp","user_id"
+                    ]
+                }
+            ]
+        },
+        {
+            "name": "Create Order",
+            "trigger": "database",
+            "inputDatabase": {
+                "name": "customer",
+                "trigger": 5,
+                "fields": [
+                    "customer_id","name"
+                ]
+            },
+            "outputDatabases": [
+                {
+                    "name": "order",
+                    "action": "create",
+                    "fields": [
+                        "order_id","customer_id","items","total_amount"
+                    ]
+                },
+                {
+                    "name": "notification",
+                    "action": "create",
+                    "fields": [
+                        "type","message","recipient"
+                    ]
+                }
+            ]
+        },
+        {
+            "name": "Process Payment",
+            "trigger": "database",
+            "inputDatabase": {
+                "name": "order",
+                "trigger": 5,
+                "fields": [
+                    "order_id","total_amount"
+                ]
+            },
+            "outputDatabases": [
+                {
+                    "name": "payment",
+                    "action": "create",
+                    "fields": [
+                        "payment_id","order_id","amount","status"
+                    ]
+                },
+                {
+                    "name": "order",
+                    "action": "update",
+                    "fields": [
+                        "payment_status"
+                    ]
+                }
+            ]
+        },
+        {
+            "name": "Update Inventory",
+            "trigger": "database",
+            "inputDatabase": {
+                "name": "order",
+                "trigger": 5,
+                "fields": [
+                    "items"
+                ]
+            },
+            "outputDatabases": [
+                {
+                    "name": "inventory",
+                    "action": "update",
+                    "fields": [
+                        "product_id","quantity","location"
+                    ]
+                },
+                {
+                    "name": "audit_log",
+                    "action": "create",
+                    "fields": [
+                        "action","product_id","quantity_change"
+                    ]
+                }
+            ]
+        },
+        {
+            "name": "Create Shipment",
+            "trigger": "database",
+            "inputDatabase": {
+                "name": "payment",
+                "trigger": 5,
+                "fields": [
+                    "payment_id","status"
+                ]
+            },
+            "outputDatabases": [
+                {
+                    "name": "shipment",
+                    "action": "create",
+                    "fields": [
+                        "shipment_id","order_id","tracking_number","status"
+                    ]
+                },
+                {
+                    "name": "order",
+                    "action": "update",
+                    "fields": [
+                        "shipment_status"
+                    ]
+                },
+                {
+                    "name": "notification",
+                    "action": "create",
+                    "fields": [
+                        "type","message","customer_id"
+                    ]
+                }
+            ]
+        },
+        {
+            "name": "Shipment Tracking",
+            "trigger": "database",
+            "inputDatabase": {
+                "name": "shipment",
+                "trigger": 5,
+                "fields": [
+                    "tracking_number","status"
+                ]
+            },
+            "outputDatabases": [
+                {
+                    "name": "notification",
+                    "action": "create",
+                    "fields": [
+                        "type","message","customer_id"
+                    ]
+                },
+                {
+                    "name": "customer",
+                    "action": "update",
+                    "fields": [
+                        "last_shipment_update"
+                    ]
+                }
+            ]
+        },
+        {
+            "name": "Customer Support Case",
+            "trigger": "database",
+            "inputDatabase": {
+                "name": "customer",
+                "trigger": 5,
+                "fields": [
+                    "customer_id","email"
+                ]
+            },
+            "outputDatabases": [
+                {
+                    "name": "case",
+                    "action": "create",
+                    "fields": [
+                        "case_id","customer_id","issue_type","priority"
+                    ]
+                },
+                {
+                    "name": "task",
+                    "action": "create",
+                    "fields": [
+                        "task_id","case_id","assigned_to","due_date"
+                    ]
+                }
+            ]
+        },
+        {
+            "name": "Case Resolution",
+            "trigger": "database",
+            "inputDatabase": {
+                "name": "task",
+                "trigger": 5,
+                "fields": [
+                    "task_id","status"
+                ]
+            },
+            "outputDatabases": [
+                {
+                    "name": "case",
+                    "action": "update",
+                    "fields": [
+                        "status","resolution"
+                    ]
+                },
+                {
+                    "name": "customer",
+                    "action": "update",
+                    "fields": [
+                        "support_tickets_resolved"
+                    ]
+                },
+                {
+                    "name": "audit_log",
+                    "action": "create",
+                    "fields": [
+                        "action","case_id","resolution_time"
+                    ]
+                }
+            ]
+        },
+        {
+            "name": "Inventory Alert",
+            "trigger": "database",
+            "inputDatabase": {
+                "name": "inventory",
+                "trigger": 5,
+                "fields": [
+                    "product_id","quantity"
+                ]
+            },
+            "outputDatabases": [
+                {
+                    "name": "notification",
+                    "action": "create",
+                    "fields": [
+                        "type","message","admin_id"
+                    ]
+                },
+                {
+                    "name": "task",
+                    "action": "create",
+                    "fields": [
+                        "task_id","product_id","action_required"
+                    ]
+                }
+            ]
+        },
+        {
+            "name": "Payment Reconciliation",
+            "trigger": "database",
+            "inputDatabase": {
+                "name": "payment",
+                "trigger": 5,
+                "fields": [
+                    "payment_id","amount"
+                ]
+            },
+            "outputDatabases": [
+                {
+                    "name": "audit_log",
+                    "action": "create",
+                    "fields": [
+                        "action","payment_id","reconciliation_status"
+                    ]
+                },
+                {
+                    "name": "order",
+                    "action": "update",
+                    "fields": [
+                        "reconciliation_status"
+                    ]
+                }
+            ]
+        },
+        {
+            "name": "Order Fulfillment",
+            "trigger": "database",
+            "inputDatabase": {
+                "name": "shipment",
+                "trigger": 5,
+                "fields": [
+                    "shipment_id","status"
+                ]
+            },
+            "outputDatabases": [
+                {
+                    "name": "order",
+                    "action": "update",
+                    "fields": [
+                        "fulfillment_status"
+                    ]
+                },
+                {
+                    "name": "customer",
+                    "action": "update",
+                    "fields": [
+                        "orders_fulfilled"
+                    ]
+                },
+                {
+                    "name": "integration_core",
+                    "action": "create",
+                    "fields": [
+                        "source","destination","status"
+                    ]
                 }
             ]
         }

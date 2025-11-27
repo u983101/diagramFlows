@@ -166,6 +166,112 @@ class MermaidGenerator {
   }
 
   /**
+   * Generate Mermaid.js flowchart for a specific path
+   * @param {Array} path - Array of path segments [table, flow, table, flow, ...]
+   * @returns {Object} Object containing mermaidCode and metadata
+   */
+  generatePathFlowchart(path) {
+    try {
+      if (path.length === 0) {
+        throw new Error('Path cannot be empty');
+      }
+
+      // Validate path structure (should alternate between tables and flows)
+      for (let i = 0; i < path.length; i++) {
+        if (i % 2 === 0) {
+          // Even indices should be tables
+          if (!this.flowData.databases.some(db => db.name === path[i])) {
+            throw new Error(`Table '${path[i]}' not found in available databases`);
+          }
+        } else {
+          // Odd indices should be flows
+          if (!this.flowData.flows.some(flow => flow.name === path[i])) {
+            throw new Error(`Flow '${path[i]}' not found in available flows`);
+          }
+        }
+      }
+
+      const mermaidCode = this.buildPathMermaidSyntax(path);
+      
+      return {
+        mermaidCode: mermaidCode,
+        nodeCount: path.length,
+        edgeCount: Math.max(0, path.length - 1),
+        config: {
+          theme: 'default',
+          flowchart: {
+            useMaxWidth: true,
+            htmlLabels: true
+          }
+        }
+      };
+    } catch (error) {
+      throw new Error(`Failed to generate path Mermaid flowchart: ${error.message}`);
+    }
+  }
+
+  /**
+   * Build Mermaid.js syntax for a specific path
+   * @param {Array} path - Array of path segments
+   * @returns {string} Mermaid.js flowchart syntax
+   */
+  buildPathMermaidSyntax(path) {
+    const lines = ['flowchart TD'];
+    
+    // Add all nodes in the path
+    path.forEach((segment, index) => {
+      const segmentId = this.sanitizeId(segment);
+      
+      if (index % 2 === 0) {
+        // Table node
+        lines.push(`    ${segmentId}[(${segment})]`);
+      } else {
+        // Flow node - determine trigger type
+        const flow = this.flowData.flows.find(f => f.name === segment);
+        if (flow && flow.trigger === 'manual') {
+          lines.push(`    ${segmentId}([${segment}])`);
+        } else {
+          lines.push(`    ${segmentId}[[${segment}]]`);
+        }
+      }
+    });
+
+    // Add edges between consecutive nodes
+    for (let i = 0; i < path.length - 1; i++) {
+      const fromId = this.sanitizeId(path[i]);
+      const toId = this.sanitizeId(path[i + 1]);
+      lines.push(`    ${fromId} --> ${toId}`);
+    }
+
+    // Add styling classes
+    lines.push('');
+    lines.push('    classDef database fill:#e1f5fe,stroke:#01579b,stroke-width:2px');
+    lines.push('    classDef flow fill:#f3e5f5,stroke:#4a148c,stroke-width:2px');
+    lines.push('    classDef manual fill:#e8f5e8,stroke:#1b5e20,stroke-width:2px');
+    lines.push('');
+
+    // Apply classes to nodes
+    path.forEach((segment, index) => {
+      const segmentId = this.sanitizeId(segment);
+      
+      if (index % 2 === 0) {
+        // Table node
+        lines.push(`    class ${segmentId} database`);
+      } else {
+        // Flow node
+        const flow = this.flowData.flows.find(f => f.name === segment);
+        if (flow && flow.trigger === 'manual') {
+          lines.push(`    class ${segmentId} manual`);
+        } else {
+          lines.push(`    class ${segmentId} flow`);
+        }
+      }
+    });
+
+    return lines.join('\n');
+  }
+
+  /**
    * Generate a simple test flowchart for validation
    * @returns {string} Test Mermaid.js code
    */

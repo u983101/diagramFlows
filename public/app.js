@@ -141,32 +141,399 @@ class FlowVisualizer {
             return;
         }
 
-        // Get nodes for current level
-        const levelNodes = hierarchy.nodes.filter(node => node.level === this.currentStepLevel);
+        // Create interactive step-through interface
+        const stepInterface = document.createElement('div');
+        stepInterface.className = 'step-interface';
 
-        if (levelNodes.length === 0) {
-            stepContent.innerHTML = '<div class="empty-message"><p>No flows at this level.</p></div>';
+        // Add breadcrumb navigation
+        const breadcrumb = this.createBreadcrumb();
+        stepInterface.appendChild(breadcrumb);
+
+        // Add current step selection
+        const currentStep = this.createCurrentStep();
+        stepInterface.appendChild(currentStep);
+
+        // Add path visualization
+        const pathVisualization = this.createPathVisualization();
+        stepInterface.appendChild(pathVisualization);
+
+        // Add action buttons
+        const actionButtons = this.createActionButtons();
+        stepInterface.appendChild(actionButtons);
+
+        stepContent.appendChild(stepInterface);
+    }
+
+    // Create breadcrumb navigation
+    createBreadcrumb() {
+        const breadcrumb = document.createElement('div');
+        breadcrumb.className = 'breadcrumb';
+
+        const breadcrumbList = document.createElement('div');
+        breadcrumbList.className = 'breadcrumb-list';
+
+        if (this.currentPath && this.currentPath.length > 0) {
+            this.currentPath.forEach((segment, index) => {
+                const breadcrumbItem = document.createElement('span');
+                breadcrumbItem.className = 'breadcrumb-item';
+                breadcrumbItem.textContent = segment;
+                
+                // Make items clickable to navigate back
+                if (index < this.currentPath.length - 1) {
+                    breadcrumbItem.classList.add('clickable');
+                    breadcrumbItem.addEventListener('click', () => {
+                        this.navigateToStep(index);
+                    });
+                }
+
+                breadcrumbList.appendChild(breadcrumbItem);
+
+                // Add separator if not last item
+                if (index < this.currentPath.length - 1) {
+                    const separator = document.createElement('span');
+                    separator.className = 'breadcrumb-separator';
+                    separator.textContent = ' → ';
+                    breadcrumbList.appendChild(separator);
+                }
+            });
+        } else {
+            const emptyBreadcrumb = document.createElement('span');
+            emptyBreadcrumb.className = 'breadcrumb-empty';
+            emptyBreadcrumb.textContent = 'Select a starting table to begin';
+            breadcrumbList.appendChild(emptyBreadcrumb);
+        }
+
+        breadcrumb.appendChild(breadcrumbList);
+        return breadcrumb;
+    }
+
+    // Create current step selection interface
+    createCurrentStep() {
+        const currentStep = document.createElement('div');
+        currentStep.className = 'current-step';
+
+        const stepHeader = document.createElement('h3');
+        stepHeader.className = 'step-header';
+
+        if (!this.currentPath || this.currentPath.length === 0) {
+            // Starting step - select flows for initial table
+            stepHeader.textContent = 'Select Flows';
+            currentStep.appendChild(stepHeader);
+            
+            const flowSelection = this.createFlowSelection(this.currentHierarchy.startingTable);
+            currentStep.appendChild(flowSelection);
+        } else {
+            const lastSegment = this.currentPath[this.currentPath.length - 1];
+            
+            // Check if we're at the starting point (only starting table in path)
+            if (this.currentPath.length === 1) {
+                // Starting step - select flows for initial table
+                stepHeader.textContent = 'Select Flows';
+                currentStep.appendChild(stepHeader);
+                
+                const flowSelection = this.createFlowSelection(this.currentHierarchy.startingTable);
+                currentStep.appendChild(flowSelection);
+            } else if (this.currentPath.length % 2 === 1) {
+                // Last segment is a table - select flows
+                stepHeader.textContent = `Select Flows for ${lastSegment}`;
+                currentStep.appendChild(stepHeader);
+                
+                const flowSelection = this.createFlowSelection(lastSegment);
+                currentStep.appendChild(flowSelection);
+            } else {
+                // Last segment is a flow - select output tables
+                stepHeader.textContent = `Select Output Tables for ${lastSegment}`;
+                currentStep.appendChild(stepHeader);
+                
+                const tableSelection = this.createTableSelection([lastSegment]);
+                currentStep.appendChild(tableSelection);
+            }
+        }
+
+        return currentStep;
+    }
+
+    // Create flow selection interface
+    createFlowSelection(tableName) {
+        const flowSelection = document.createElement('div');
+        flowSelection.className = 'selection-container';
+
+        const searchInput = document.createElement('input');
+        searchInput.type = 'text';
+        searchInput.placeholder = 'Search flows...';
+        searchInput.className = 'search-input';
+        flowSelection.appendChild(searchInput);
+
+        const flowList = document.createElement('div');
+        flowList.className = 'selection-list';
+        flowSelection.appendChild(flowList);
+
+        // Load flows for the table
+        this.loadFlowsForTable(tableName).then(flows => {
+            this.renderFlowList(flowList, flows, searchInput);
+        });
+
+        return flowSelection;
+    }
+
+    // Create table selection interface
+    createTableSelection(flowNames) {
+        const tableSelection = document.createElement('div');
+        tableSelection.className = 'selection-container';
+
+        const searchInput = document.createElement('input');
+        searchInput.type = 'text';
+        searchInput.placeholder = 'Search tables...';
+        searchInput.className = 'search-input';
+        tableSelection.appendChild(searchInput);
+
+        const tableList = document.createElement('div');
+        tableList.className = 'selection-list';
+        tableSelection.appendChild(tableList);
+
+        // Load tables from flows
+        this.loadTablesFromFlows(flowNames).then(tables => {
+            this.renderTableList(tableList, tables, searchInput);
+        });
+
+        return tableSelection;
+    }
+
+    // Load flows for a specific table
+    async loadFlowsForTable(tableName) {
+        try {
+            const response = await fetch(`/api/flows/table/${encodeURIComponent(tableName)}/flows`);
+            const result = await response.json();
+            
+            if (result.success) {
+                return result.data;
+            } else {
+                console.error('Failed to load flows:', result.error);
+                return [];
+            }
+        } catch (error) {
+            console.error('Error loading flows:', error);
+            return [];
+        }
+    }
+
+    // Load tables from specific flows
+    async loadTablesFromFlows(flowNames) {
+        try {
+            const response = await fetch('/api/flows/flows/tables', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ flowNames })
+            });
+            
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            
+            const result = await response.json();
+            
+            if (result.success) {
+                return result.data;
+            } else {
+                console.error('Failed to load tables:', result.error);
+                return [];
+            }
+        } catch (error) {
+            console.error('Error loading tables:', error);
+            return [];
+        }
+    }
+
+    // Render flow list with search functionality
+    renderFlowList(container, flows, searchInput) {
+        const renderList = (filteredFlows) => {
+            container.innerHTML = '';
+            
+            if (filteredFlows.length === 0) {
+                const emptyMessage = document.createElement('div');
+                emptyMessage.className = 'empty-selection';
+                emptyMessage.textContent = 'No flows found';
+                container.appendChild(emptyMessage);
+                return;
+            }
+
+            filteredFlows.forEach(flow => {
+                const flowItem = document.createElement('div');
+                flowItem.className = 'selection-item';
+                flowItem.innerHTML = `
+                    <div class="item-name">${flow.name}</div>
+                    <div class="item-details">
+                        <span class="trigger-badge ${flow.trigger}">${flow.trigger}</span>
+                        ${flow.inputDatabase ? `<span>Input: ${flow.inputDatabase.name}</span>` : ''}
+                    </div>
+                `;
+                
+                flowItem.addEventListener('click', () => {
+                    this.addToPath(flow.name);
+                });
+
+                container.appendChild(flowItem);
+            });
+        };
+
+        // Initial render
+        renderList(flows);
+
+        // Add search functionality
+        searchInput.addEventListener('input', (e) => {
+            const searchTerm = e.target.value.toLowerCase();
+            const filteredFlows = flows.filter(flow => 
+                flow.name.toLowerCase().includes(searchTerm)
+            );
+            renderList(filteredFlows);
+        });
+    }
+
+    // Render table list with search functionality
+    renderTableList(container, tables, searchInput) {
+        const renderList = (filteredTables) => {
+            container.innerHTML = '';
+            
+            if (filteredTables.length === 0) {
+                const emptyMessage = document.createElement('div');
+                emptyMessage.className = 'empty-selection';
+                emptyMessage.textContent = 'No tables found';
+                container.appendChild(emptyMessage);
+                return;
+            }
+
+            filteredTables.forEach(table => {
+                const tableItem = document.createElement('div');
+                tableItem.className = 'selection-item';
+                tableItem.innerHTML = `
+                    <div class="item-name">${table}</div>
+                    <div class="item-details">Database Table</div>
+                `;
+                
+                tableItem.addEventListener('click', () => {
+                    this.addToPath(table);
+                });
+
+                container.appendChild(tableItem);
+            });
+        };
+
+        // Initial render
+        renderList(tables);
+
+        // Add search functionality
+        searchInput.addEventListener('input', (e) => {
+            const searchTerm = e.target.value.toLowerCase();
+            const filteredTables = tables.filter(table => 
+                table.toLowerCase().includes(searchTerm)
+            );
+            renderList(filteredTables);
+        });
+    }
+
+    // Add segment to path
+    addToPath(segment) {
+        if (!this.currentPath) {
+            this.currentPath = [this.currentHierarchy.startingTable];
+        }
+        
+        this.currentPath.push(segment);
+        this.renderStepView(this.currentHierarchy);
+    }
+
+    // Navigate to specific step in path
+    navigateToStep(stepIndex) {
+        if (this.currentPath && stepIndex >= 0 && stepIndex < this.currentPath.length) {
+            this.currentPath = this.currentPath.slice(0, stepIndex + 1);
+            this.renderStepView(this.currentHierarchy);
+        }
+    }
+
+    // Create path visualization
+    createPathVisualization() {
+        const pathViz = document.createElement('div');
+        pathViz.className = 'path-visualization';
+
+        const pathHeader = document.createElement('h4');
+        pathHeader.textContent = 'Current Path';
+        pathViz.appendChild(pathHeader);
+
+        const pathDisplay = document.createElement('div');
+        pathDisplay.className = 'path-display';
+
+        if (this.currentPath && this.currentPath.length > 0) {
+            const pathText = this.currentPath.join(' → ');
+            pathDisplay.textContent = pathText;
+        } else {
+            pathDisplay.textContent = 'No path selected';
+            pathDisplay.className += ' empty-path';
+        }
+
+        pathViz.appendChild(pathDisplay);
+        return pathViz;
+    }
+
+    // Create action buttons
+    createActionButtons() {
+        const actionButtons = document.createElement('div');
+        actionButtons.className = 'action-buttons';
+
+        const startOverBtn = document.createElement('button');
+        startOverBtn.textContent = 'Start Over';
+        startOverBtn.className = 'btn-secondary';
+        startOverBtn.addEventListener('click', () => {
+            this.currentPath = null;
+            this.renderStepView(this.currentHierarchy);
+        });
+
+        const generateDiagramBtn = document.createElement('button');
+        generateDiagramBtn.textContent = 'Generate Mermaid Diagram';
+        generateDiagramBtn.className = 'btn-primary';
+        generateDiagramBtn.addEventListener('click', () => {
+            this.generatePathDiagram();
+        });
+
+        // Disable generate button if no path or path is incomplete
+        if (!this.currentPath || this.currentPath.length < 2) {
+            generateDiagramBtn.disabled = true;
+        }
+
+        actionButtons.appendChild(startOverBtn);
+        actionButtons.appendChild(generateDiagramBtn);
+
+        return actionButtons;
+    }
+
+    // Generate Mermaid diagram for current path
+    async generatePathDiagram() {
+        if (!this.currentPath || this.currentPath.length < 2) {
+            alert('Please build a path first');
             return;
         }
 
-        const stepLevel = document.createElement('div');
-        stepLevel.className = 'step-level';
+        try {
+            const response = await fetch('/api/flows/mermaid/path', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ path: this.currentPath })
+            });
+            const result = await response.json();
 
-        const stepHeader = document.createElement('div');
-        stepHeader.className = 'step-level-header';
-        stepHeader.textContent = `Level ${this.currentStepLevel}`;
-        stepLevel.appendChild(stepHeader);
-
-        const flowNodesContainer = document.createElement('div');
-        flowNodesContainer.className = 'flow-nodes';
-
-        levelNodes.forEach(node => {
-            const flowNode = this.createFlowNode(node);
-            flowNodesContainer.appendChild(flowNode);
-        });
-
-        stepLevel.appendChild(flowNodesContainer);
-        stepContent.appendChild(stepLevel);
+            if (result.success) {
+                // Switch to Mermaid view and display the path diagram
+                this.currentMermaidData = result.data;
+                this.renderPathMermaidView();
+            } else {
+                alert('Failed to generate diagram: ' + result.error);
+            }
+        } catch (error) {
+            console.error('Error generating path diagram:', error);
+            alert('Error generating diagram: ' + error.message);
+        }
     }
 
     // Toggle between tree, step, and mermaid views
@@ -189,7 +556,13 @@ class FlowVisualizer {
         } else if (viewType === 'step') {
             this.renderStepView(this.currentHierarchy);
         } else if (viewType === 'mermaid') {
-            this.renderMermaidView();
+            // If we have a current path, generate path-specific diagram
+            // Otherwise, generate full hierarchy diagram
+            if (this.currentPath && this.currentPath.length >= 2) {
+                this.generatePathDiagram();
+            } else {
+                this.renderMermaidView();
+            }
         }
     }
 
@@ -289,6 +662,65 @@ class FlowVisualizer {
         }
     }
 
+    // Render Mermaid diagram for current path
+    renderPathMermaidView() {
+        const mermaidView = document.getElementById('mermaidView');
+        const mermaidContent = document.getElementById('mermaidContent');
+        const mermaidCode = document.getElementById('mermaidCode');
+        const mermaidCodeContent = document.getElementById('mermaidCodeContent');
+        
+        // Switch to Mermaid view
+        this.currentView = 'mermaid';
+        
+        // Update active button states
+        document.getElementById('treeViewBtn').classList.toggle('active', false);
+        document.getElementById('stepViewBtn').classList.toggle('active', false);
+        document.getElementById('mermaidViewBtn').classList.toggle('active', true);
+
+        // Show/hide views
+        document.getElementById('treeView').classList.toggle('active', false);
+        document.getElementById('stepView').classList.toggle('active', false);
+        document.getElementById('mermaidView').classList.toggle('active', true);
+
+        // Display the path diagram
+        mermaidContent.innerHTML = '<div class="loading-message">Loading path diagram...</div>';
+        mermaidCode.style.display = 'none';
+
+        if (!this.currentMermaidData) {
+            mermaidContent.innerHTML = '<div class="empty-message"><p>No path diagram data available.</p></div>';
+            return;
+        }
+
+        try {
+            // Display Mermaid.js code
+            mermaidCodeContent.textContent = this.currentMermaidData.mermaidCode;
+            mermaidCode.style.display = 'block';
+
+            // Initialize Mermaid.js if not already done
+            if (!this.mermaidInitialized) {
+                mermaid.initialize({
+                    startOnLoad: true,
+                    theme: 'default',
+                    flowchart: {
+                        useMaxWidth: true,
+                        htmlLabels: true
+                    }
+                });
+                this.mermaidInitialized = true;
+            }
+
+            // Render the Mermaid chart
+            mermaidContent.innerHTML = `<div class="mermaid">${this.currentMermaidData.mermaidCode}</div>`;
+            
+            // Re-render to ensure proper display
+            mermaid.init(undefined, mermaidContent.querySelector('.mermaid'));
+            
+        } catch (error) {
+            console.error('Error rendering path Mermaid view:', error);
+            mermaidContent.innerHTML = `<div class="error-message"><p>Error loading path diagram: ${error.message}</p></div>`;
+        }
+    }
+
     // Copy Mermaid.js code to clipboard
     copyMermaidCode() {
         if (this.currentMermaidData) {
@@ -330,6 +762,8 @@ class FlowVisualizer {
     setHierarchy(hierarchy) {
         this.currentHierarchy = hierarchy;
         this.currentStepLevel = 0;
+        // Initialize the path with the starting table
+        this.currentPath = [hierarchy.startingTable];
         this.renderTreeView(hierarchy);
         this.updateStepControls();
     }
@@ -346,10 +780,41 @@ class AppController {
 
     // Initialize all event listeners
     initializeEventListeners() {
+        // Table search functionality
+        const tableSearch = document.getElementById('tableSearch');
+        const tableSelect = document.getElementById('tableSelect');
+        
+        tableSearch.addEventListener('input', (e) => {
+            this.filterTables(e.target.value);
+        });
+
+        tableSearch.addEventListener('focus', () => {
+            tableSelect.style.display = 'block';
+            this.filterTables(tableSearch.value);
+        });
+
+        tableSearch.addEventListener('blur', () => {
+            // Hide dropdown after a short delay to allow for selection
+            setTimeout(() => {
+                tableSelect.style.display = 'none';
+            }, 200);
+        });
+
         // Table selection
-        document.getElementById('tableSelect').addEventListener('change', (e) => {
+        tableSelect.addEventListener('change', (e) => {
+            const selectedValue = e.target.value;
             const loadButton = document.getElementById('loadHierarchy');
-            loadButton.disabled = !e.target.value;
+            loadButton.disabled = !selectedValue;
+            
+            if (selectedValue) {
+                tableSearch.value = e.target.options[e.target.selectedIndex].text;
+            }
+        });
+
+        tableSelect.addEventListener('click', (e) => {
+            if (e.target.tagName === 'OPTION') {
+                tableSelect.blur();
+            }
         });
 
         // Load hierarchy button
@@ -464,6 +929,56 @@ class AppController {
             option.textContent = table;
             select.appendChild(option);
         });
+
+        // Store the original tables for filtering
+        this.allTables = tables;
+    }
+
+    // Filter tables based on search input
+    filterTables(searchTerm) {
+        const select = document.getElementById('tableSelect');
+        const searchInput = document.getElementById('tableSearch');
+        
+        // Clear all options except the placeholder
+        while (select.children.length > 1) {
+            select.removeChild(select.lastChild);
+        }
+
+        if (!searchTerm) {
+            // Show all tables when search is empty
+            this.allTables.forEach(table => {
+                const option = document.createElement('option');
+                option.value = table;
+                option.textContent = table;
+                select.appendChild(option);
+            });
+        } else {
+            // Filter tables based on search term (case-insensitive)
+            const filteredTables = this.allTables.filter(table => 
+                table.toLowerCase().includes(searchTerm.toLowerCase())
+            );
+
+            if (filteredTables.length === 0) {
+                // Show "No results" message
+                const option = document.createElement('option');
+                option.value = '';
+                option.textContent = 'No matching tables found';
+                option.disabled = true;
+                select.appendChild(option);
+            } else {
+                // Add filtered tables
+                filteredTables.forEach(table => {
+                    const option = document.createElement('option');
+                    option.value = table;
+                    option.textContent = table;
+                    select.appendChild(option);
+                });
+            }
+        }
+
+        // Reset selection when filtering
+        select.value = '';
+        document.getElementById('loadHierarchy').disabled = true;
     }
 
     // Load flow hierarchy for selected table

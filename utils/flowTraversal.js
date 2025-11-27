@@ -82,6 +82,30 @@ const buildFlowHierarchy = (startingTable, flows, currentLevel = 0, visitedTable
   };
 };
 
+// Get flows by input table name
+const getFlowsByInputTableName = (tableName, flows) => {
+  return flows.filter(flow => 
+    flow.trigger === 'database' && 
+    flow.inputDatabase && 
+    flow.inputDatabase.name === tableName
+  );
+};
+
+// Get output tables from specific flows
+const getOutputTablesFromFlowNames = (flowNames, flows) => {
+  const outputTables = new Set();
+  
+  flows.forEach(flow => {
+    if (flowNames.includes(flow.name) && flow.outputDatabases) {
+      flow.outputDatabases.forEach(outputDb => {
+        outputTables.add(outputDb.name);
+      });
+    }
+  });
+  
+  return Array.from(outputTables);
+};
+
 // FlowTraversalService class
 class FlowTraversalService {
   constructor() {
@@ -116,6 +140,17 @@ class FlowTraversalService {
 
   getAllFlows() {
     return this.flowData.flows;
+  }
+
+  getFlowsByInputTable(tableName) {
+    if (!this.flowData.databases.some(db => db.name === tableName)) {
+      throw new Error(`Table '${tableName}' not found in available databases`);
+    }
+    return getFlowsByInputTableName(tableName, this.flowData.flows);
+  }
+
+  getOutputTablesFromFlows(flowNames) {
+    return getOutputTablesFromFlowNames(flowNames, this.flowData.flows);
   }
 }
 
